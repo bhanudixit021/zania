@@ -22,6 +22,6 @@ from mainsite.api import controllers as mainsite_urls
 urlpatterns = [
     path("", mainsite_views.home, name="home"),
     path("internal-admin/", admin.site.urls),
-    path("api/<int:version>/products/", mainsite_urls.ProductViewSetAPI.as_view()),
-    path("api/<int:version>/create-order/", mainsite_urls.OrderViewSetAPI.as_view()),
+    path("api/<int:version>/products/", mainsite_urls.ProductViewSetAPI.as_view(),name='product-list'),
+    path("api/<int:version>/create-order/", mainsite_urls.OrderViewSetAPI.as_view(),name='order-create'),
 ]

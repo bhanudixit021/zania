@@ -1,25 +1,30 @@
-from django.test import TestCase
-
-# Create your tests here.
-
-from rest_framework.test import APITestCase
-from rest_framework import status
+from django.test import TestCase, Client
 from .models import Product
+from django.urls import reverse
+import json
 
-class EcommerceAPITest(APITestCase):
+class EcommerceAPITestCase(TestCase):
     def setUp(self):
-        self.product = Product.objects.create(name="Laptop", description="A powerful laptop", price=1000, stock=10)
-    
+        self.client = Client()
+        self.api_key = {"APIKEY": "default-api-key"}
+        self.product = Product.objects.create(name="Test Product", description="Test Desc", price=10.0, stock=5)
+
     def test_get_products(self):
-        response = self.client.get("/products/")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-    
-    def test_create_product(self):
-        data = {"name": "Phone", "description": "A smartphone", "price": 500, "stock": 5}
-        response = self.client.post("/products/", data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-    
-    def test_create_order_insufficient_stock(self):
-        data = {"products": [{"id": self.product.id, "quantity": 20}]}
-        response = self.client.post("/orders/", data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response = self.client.get(reverse('product-list'), headers=self.api_key)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("products", response.json())
+
+    def test_add_product(self):
+        data = {"name": "New Product", "description": "Desc", "price": 20.0, "stock": 10}
+        response = self.client.post(reverse('product-list'), data=json.dumps(data), content_type='application/json', headers=self.api_key)
+        self.assertEqual(response.status_code, 201)
+
+    def test_place_order_success(self):
+        order_data = {"products": [{"id": self.product.id, "quantity": 2}]}
+        response = self.client.post(reverse('order-create'), data=json.dumps(order_data), content_type='application/json', headers=self.api_key)
+        self.assertEqual(response.status_code, 201)
+
+    def test_place_order_insufficient_stock(self):
+        order_data = {"products": [{"id": self.product.id, "quantity": 10}]}
+        response = self.client.post(reverse('order-create'), data=json.dumps(order_data), content_type='application/json', headers=self.api_key)
+        self.assertEqual(response.status_code, 400)

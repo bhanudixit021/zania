@@ -110,3 +110,7 @@ __pycache__/
 # Ignore z-venv directory
 z-venv/
 ./z-venv/
+
+db.*
+*.cpython*
+

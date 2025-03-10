@@ -1,13 +1,9 @@
 from rest_framework.views import APIView
 from utils.helpers.responses import SuccessResponse, ErrorResponse
-from rest_framework import status
 from utils.views import CustomPaginator
 from rest_framework.throttling import AnonRateThrottle
 from mainsite.models import Product,Order
-from .serializers import OrderSerializer
 from utils.helpers.permissions import ApiKeyPermission
-from rest_framework.exceptions import ValidationError
-from .serializers import OrderSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.db import transaction, DatabaseError
