@@ -11,6 +11,7 @@ from .serializers import OrderSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.db import transaction, DatabaseError
+from django.core.exceptions import ObjectDoesNotExist
 import json
 
 
@@ -51,28 +52,36 @@ class OrderViewSetAPI(APIView):
     permission_classes = (ApiKeyPermission,)
     throttle_classes = [AnonRateThrottle]
 
-    def create(self, request):
+    @method_decorator(csrf_exempt)
+    def post(self, request):
         try:
-            products_data = request.data.get("products", [])
+            data = json.loads(request.body)
+            products_data = data.get("products", [])
+            if not products_data:
+                return ErrorResponse({"error": "No products provided"}, status=400)
+            
             total_price = 0
             product_instances = []
-
-            for item in products_data:
-                product = Product.objects.get(id=item['id'])
-                if product.stock < item['quantity']:
-                    raise ValidationError({"error": f"Insufficient stock for {product.name}"})
-                product.stock -= item['quantity']
-                product_instances.append(product)
-                total_price += product.price * item['quantity']
             
-            for product in product_instances:
-                product.save()
-            
-            order = Order.objects.create(products=products_data, total_price=total_price, status='pending')
-            return SuccessResponse(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
-        except Product.DoesNotExist:
-            return ErrorResponse({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
-        except ValidationError as e:
-            return ErrorResponse(e.detail, status=status.HTTP_400_BAD_REQUEST)
+            with transaction.atomic():
+                for item in products_data:
+                    product = Product.objects.get(id=item['id'])
+                    if product.stock < item['quantity']:
+                        return ErrorResponse({"error": f"Insufficient stock for {product.name}"}, status=400)
+                    product.stock -= item['quantity']
+                    product_instances.append(product)
+                    total_price += product.price * item['quantity']
+                
+                for product in product_instances:
+                    product.save()
+                
+                order = Order.objects.create(products=products_data, total_price=total_price, status='pending')
+                return SuccessResponse({"message": "Order placed successfully", "order_id": order.id}, status=201)
+        except ObjectDoesNotExist:
+            return ErrorResponse({"error": "Product not found"}, status=404)
+        except (KeyError, ValueError, TypeError):
+            return ErrorResponse({"error": "Invalid order data"}, status=400)
+        except DatabaseError:
+            return ErrorResponse({"error": "Database error occurred"}, status=500)
         except Exception as e:
-            return ErrorResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return ErrorResponse({"error": str(e)}, status=500)

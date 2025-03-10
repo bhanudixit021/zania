@@ -1,7 +1,5 @@
 from rest_framework import permissions
 from django.conf import settings
-from rest_framework import status
-from utils.helpers import constants
 
 
 '''
