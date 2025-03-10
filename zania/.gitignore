@@ -76,7 +76,7 @@ chromedriver_mac64/
 /.env
 
 # bower packages
-cnext_backend/assets-src/vendor/
+
 .sass-cache/
 todo.txt
 *.rdb

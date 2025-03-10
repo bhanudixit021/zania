@@ -3,13 +3,14 @@
 ### Setup and Installation
 1. Clone the repository
    ```sh
-   git clone <repo-url>
+   git clone git@github.com:bhanudixit021/zania.git
    cd zania
    ```
 2. Build and run using Docker
    ```sh
    docker build -t zania .
    docker run -p 8000:8000 zania
+   
    ```
 3. Run tests
    ```sh
